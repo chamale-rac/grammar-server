@@ -10,9 +10,8 @@ def main():
         file_path = './g.txt'
     lines = readFile(file_path)
 
-    grammar = Grammar(lines, verbose=False)
-    print('>> Grammar:')
-    print(grammar)
+    grammar = Grammar(lines)
+    print()
     print('>> Solution:')
     print(grammar)
 

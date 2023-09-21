@@ -10,8 +10,7 @@ class Grammar:
         lines (list[str]): The lines of the grammar file.    
     '''
 
-    def __init__(self, lines: list[str], verbose: bool = False) -> None:
-        self.verbose = verbose
+    def __init__(self, lines: list[str]) -> None:
         self.non_terminals: set[str] = set()
         self.nullables: set[str] = set()
         self.terminals: set[str] = set()
@@ -102,15 +101,8 @@ class Grammar:
         BREAK_INF_LOOP = False
         nullables_history = set()
 
-        if self.verbose:
-            print('=> removing e-transitions', '\n')
-
         while self.nullables and not BREAK_INF_LOOP:
             for nullable_non_terminal in self.nullables.copy():
-                if self.verbose:
-                    print('=> removing:', nullable_non_terminal, ' -> ϵ')
-                    print(self, '\n')
-
                 # For each production that contains the nullable non-terminal.
                 for non_terminal, non_terminals in self.production_non_terminals.items():
                     if BREAK_INF_LOOP:
@@ -144,12 +136,7 @@ class Grammar:
                             self.productions[non_terminal] |= combinations_set
 
                 if BREAK_INF_LOOP:
-                    if self.verbose:
-                        print('=> inf loop detected:')
-                        print(self)
                     for nullable in self.nullables:
-                        if self.verbose:
-                            print('\t=> removing:', nullable, ' -> ϵ')
                         self.productions[nullable] -= {('ϵ',)}
                     print()
                     break
