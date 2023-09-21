@@ -4,10 +4,10 @@ from src.utils.tools import readFile, fileInPath
 
 
 def main():
-    file_path = input("Enter file path (default: ./g.txt): ")
+    file_path = input("Enter file path (default: ./grammars/g.txt): ")
     if not file_path or not fileInPath(file_path):
         print("Invalid file path. Using default file.")
-        file_path = './g.txt'
+        file_path = './grammars/g.txt'
     lines = readFile(file_path)
 
     grammar = Grammar(lines)
