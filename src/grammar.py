@@ -10,7 +10,8 @@ class Grammar:
         lines (list[str]): The lines of the grammar file.    
     '''
 
-    def __init__(self, lines: list[str]) -> None:
+    def __init__(self, lines: list[str], verbose: bool = False) -> None:
+        self.verbose = verbose
         self.non_terminals: set[str] = set()
         self.nullables: set[str] = set()
         self.terminals: set[str] = set()
@@ -79,8 +80,9 @@ class Grammar:
         '''
         Remove the e-transitions from the grammar.
         '''
+        from itertools import combinations
+
         def get_combinations(production, non_dynamic: set[str]):
-            from itertools import combinations
 
             combinations_set = set()
             n = len(production)
@@ -97,11 +99,22 @@ class Grammar:
 
             return combinations_set
 
-        while self.nullables:
+        BREAK_INF_LOOP = False
+        nullables_history = set()
+
+        if self.verbose:
+            print('=> removing e-transitions', '\n')
+
+        while self.nullables and not BREAK_INF_LOOP:
             for nullable_non_terminal in self.nullables.copy():
+                if self.verbose:
+                    print('=> removing:', nullable_non_terminal, ' -> ϵ')
+                    print(self, '\n')
 
                 # For each production that contains the nullable non-terminal.
                 for non_terminal, non_terminals in self.production_non_terminals.items():
+                    if BREAK_INF_LOOP:
+                        break
 
                     if nullable_non_terminal in non_terminals:
                         # Get the productions that contains the nullable non-terminal and have the nullable non-terminal.
@@ -112,7 +125,12 @@ class Grammar:
                             if len(production) == 1 and non_terminal != nullable_non_terminal:
                                 # Add the nullable non-terminal to the production.
                                 self.productions[non_terminal] |= {('ϵ',)}
+
                                 self.nullables.add(non_terminal)
+                                nullables_history.add(non_terminal)
+
+                                if len(nullables_history) == len(self.productions):
+                                    BREAK_INF_LOOP = True
                                 continue
 
                             # Get the combinations of the production without the nullable non-terminal.
@@ -125,8 +143,18 @@ class Grammar:
                             # Add the combinations to the production.
                             self.productions[non_terminal] |= combinations_set
 
+                if BREAK_INF_LOOP:
+                    if self.verbose:
+                        print('=> inf loop detected:')
+                        print(self)
+                    for nullable in self.nullables:
+                        if self.verbose:
+                            print('\t=> removing:', nullable, ' -> ϵ')
+                        self.productions[nullable] -= {('ϵ',)}
+                    print()
+                    break
+
                 # Remove the non-terminal from the nullables set.
                 self.nullables.remove(nullable_non_terminal)
-
                 # Quit ϵ from the production.
                 self.productions[nullable_non_terminal] -= {('ϵ',)}
