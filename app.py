@@ -11,7 +11,8 @@ def main():
     lines = readFile(file_path)
 
     grammar = Grammar(lines)
-    print(grammar)
+    for production in grammar.productions:
+        print(production, '->', grammar.productions[production])
 
 
 if __name__ == '__main__':

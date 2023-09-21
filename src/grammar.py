@@ -1,4 +1,5 @@
 from __future__ import annotations
+from collections import defaultdict
 
 
 class Grammar:
@@ -10,16 +11,23 @@ class Grammar:
     '''
 
     def __init__(self, lines: list[str]) -> None:
-        self.non_terminals = set()
-        self.terminals = set()
-        self.productions: dict[str, set[tuple(str, ...)]] = {}
-        self.transformLines(lines)
+        self.non_terminals: set[str] = set()
+        self.nullables: set[str] = set()
+        self.terminals: set[str] = set()
+        self.production_terminals = defaultdict(set)
+        self.production_non_terminals = defaultdict(set)
+        self.productions = defaultdict(set)
+        self.__transform_lines(lines)
+        self.__remove_e_transitions()
 
     def __str__(self) -> str:
         return f"""
         Non-terminals: {self.non_terminals}
         Terminals: {self.terminals}
         Productions: {self.productions}
+        Production Terminals: {self.production_terminals}
+        Production Non-terminals: {self.production_non_terminals}
+        Nullables: {self.nullables}
         """
 
     def __eq__(self, other: Grammar) -> bool:
@@ -29,7 +37,7 @@ class Grammar:
                 self.productions == other.productions
         return False
 
-    def transformLines(self, lines) -> list[str]:
+    def __transform_lines(self, lines) -> list[str]:
         '''
         Transform the received lines into productions. Each line have been already validated.
 
@@ -38,31 +46,102 @@ class Grammar:
         '''
 
         # Divide each line by non-terminal -> rule | rule | ...
-        lines = [line.split('->') for line in lines]
+        productions = [line.split('->') for line in lines]
 
-        for line in lines:
+        for production in productions:
             # Remove the spaces from the non-terminal.
-            this_non_terminal = line[0].strip()
-            # Split the rules string by the pipe symbol.
-            this_rules = line[1].split('|')
-            # Split the each rule by spaces. This means that each rule will be a list of symbols.
-            this_rules = [tuple(rule.strip().split(' '))
-                          for rule in this_rules]
+            this_non_terminal = production[0].strip()
+
+            # Split the rules string by the pipe symbol. And then group the symbols in a tuple.
+            rule_set = {tuple(rule.strip().split(' '))
+                        for rule in production[1].split('|')}
 
             # Add the non-terminal to the productions dictionary.
-            if this_non_terminal in self.productions:
-                self.productions[this_non_terminal].update(this_rules)
-            else:
-                self.productions[this_non_terminal] = set(this_rules)
+            self.productions[this_non_terminal] |= rule_set
 
             # Add the non-terminal to the non-terminals set.
             self.non_terminals.add(this_non_terminal)
-            for rule in this_rules:
+            for rule in rule_set:
                 # Add each symbol to the terminals or non-terminals set.
                 for symbol in rule:
-                    # if symbol == 'ϵ':
-                    #     continue
                     if symbol.isupper():
                         self.non_terminals.add(symbol)
+                        self.production_non_terminals[this_non_terminal] |= set(
+                            symbol)
                     else:
+                        if symbol == 'ϵ':
+                            self.nullables.add(this_non_terminal)
                         self.terminals.add(symbol)
+                        self.production_terminals[this_non_terminal] |= set(
+                            symbol)
+
+    def __remove_e_transitions(self):
+        '''
+        Remove the e-transitions from the grammar.
+        '''
+        def get_combinations(production, non_dynamic: set[str]):
+            from itertools import combinations
+
+            combinations_set = set()
+            n = len(production)
+
+            non_dynamic_len = sum(
+                element in non_dynamic for element in production)
+
+            for i in range(1, n+1):
+                for comb in combinations(production, i):
+                    comb_non_dynamic_len = sum(
+                        element in non_dynamic for element in comb)
+                    if non_dynamic_len == comb_non_dynamic_len:
+                        combinations_set.add(comb)
+
+            return combinations_set
+
+        limit = 0
+        while self.nullables:
+            # print('nullables: ', self.nullables)
+            # for production in self.productions:
+            #     print(production, '->', self.productions[production])
+
+            if limit > 7:
+                break
+            limit += 1
+            for nullable_non_terminal in self.nullables.copy():
+
+                # For each production that contains the nullable non-terminal.
+                for non_terminal, non_terminals in self.production_non_terminals.items():
+
+                    if nullable_non_terminal in non_terminals:
+                        # Get the productions that contains the nullable non-terminal and have the nullable non-terminal.
+                        productions_with_nullable = {
+                            production for production in self.productions[non_terminal] if nullable_non_terminal in production}
+
+                        for production in productions_with_nullable:
+                            if len(production) == 1:
+                                if non_terminal != nullable_non_terminal:
+                                    # Add the nullable non-terminal to the production.
+                                    self.productions[non_terminal] |= {('ϵ',)}
+                                    self.nullables.add(non_terminal)
+                                continue
+
+                            # Get the combinations of the production without the nullable non-terminal.
+                            non_dynamic = set(
+                                production) - {nullable_non_terminal}
+
+                            # print('not_t: ', non_terminal, '\tnullable:', nullable_non_terminal,
+                            #       '\t nde:', non_dynamic, '\tprod:', production)
+
+                            combinations_set = get_combinations(
+                                production, non_dynamic)
+
+                            # print('combinations: ', combinations_set)
+
+                            # Add the combinations to the production.
+                            self.productions[non_terminal] |= combinations_set
+
+                # Remove the non-terminal from the nullables set.
+                self.nullables.remove(nullable_non_terminal)
+
+                # Quit ϵ from the production.
+                self.productions[nullable_non_terminal] -= {('ϵ',)}
+                # print()
