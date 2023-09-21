@@ -21,14 +21,14 @@ class Grammar:
         self.__remove_e_transitions()
 
     def __str__(self) -> str:
-        return f"""
-        Non-terminals: {self.non_terminals}
-        Terminals: {self.terminals}
-        Productions: {self.productions}
-        Production Terminals: {self.production_terminals}
-        Production Non-terminals: {self.production_non_terminals}
-        Nullables: {self.nullables}
-        """
+        output = ''
+        for production, rules in self.productions.items():
+            rules_str = ''
+            for rule in rules:
+                symbol_str = ' '.join(symbol for symbol in rule)
+                rules_str += f'{symbol_str} | '
+            output += f'{production} -> {rules_str[:-3]}\n'
+        return output[:-1]
 
     def __eq__(self, other: Grammar) -> bool:
         if isinstance(other, Grammar):
@@ -97,15 +97,7 @@ class Grammar:
 
             return combinations_set
 
-        limit = 0
         while self.nullables:
-            # print('nullables: ', self.nullables)
-            # for production in self.productions:
-            #     print(production, '->', self.productions[production])
-
-            if limit > 7:
-                break
-            limit += 1
             for nullable_non_terminal in self.nullables.copy():
 
                 # For each production that contains the nullable non-terminal.
@@ -117,24 +109,18 @@ class Grammar:
                             production for production in self.productions[non_terminal] if nullable_non_terminal in production}
 
                         for production in productions_with_nullable:
-                            if len(production) == 1:
-                                if non_terminal != nullable_non_terminal:
-                                    # Add the nullable non-terminal to the production.
-                                    self.productions[non_terminal] |= {('ϵ',)}
-                                    self.nullables.add(non_terminal)
+                            if len(production) == 1 and non_terminal != nullable_non_terminal:
+                                # Add the nullable non-terminal to the production.
+                                self.productions[non_terminal] |= {('ϵ',)}
+                                self.nullables.add(non_terminal)
                                 continue
 
                             # Get the combinations of the production without the nullable non-terminal.
                             non_dynamic = set(
                                 production) - {nullable_non_terminal}
 
-                            # print('not_t: ', non_terminal, '\tnullable:', nullable_non_terminal,
-                            #       '\t nde:', non_dynamic, '\tprod:', production)
-
                             combinations_set = get_combinations(
                                 production, non_dynamic)
-
-                            # print('combinations: ', combinations_set)
 
                             # Add the combinations to the production.
                             self.productions[non_terminal] |= combinations_set
@@ -144,4 +130,3 @@ class Grammar:
 
                 # Quit ϵ from the production.
                 self.productions[nullable_non_terminal] -= {('ϵ',)}
-                # print()
