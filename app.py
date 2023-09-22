@@ -1,10 +1,10 @@
 from src.grammar import Grammar
 from src.utils.tools import readFile, fileInPath
+from src.utils.constants import regex_str
 
 from automaton.src.expression import Expression
 from automaton.src._ast import AbstractSyntaxTree as AST
 from automaton.src._nfa import NonDeterministicFiniteAutomaton as NFA
-from constants import regex_str
 # !COPY THIS: ϵ
 
 
