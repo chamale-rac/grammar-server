@@ -13,8 +13,8 @@ jobs:
       - name: Check out automaton-server
         uses: actions/checkout@v4
         with:
-        repository: chamale-rac/automaton-server
-        path: overcome
+          repository: chamale-rac/automaton-server
+          path: overcome
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Create release
