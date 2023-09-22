@@ -1,0 +1,29 @@
+name: Dispatched Release
+
+on:
+  workflow_dispatch:
+  
+jobs:
+  build:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out automaton-server
+        uses: actions/checkout@v4
+        with:
+          repository: chamale-rac/automaton-server
+          path: ${{ github.workspace }}
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Create zip
+        run: |
+          zip -r UsableCode.zip automaton/src/ src/ grammars/ app.py requirements.txt
+      - name: Create release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "Development Build"
+          files: |
+            UsableCode.zip
