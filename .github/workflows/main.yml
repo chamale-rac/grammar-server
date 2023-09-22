@@ -16,11 +16,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Create release
-        uses: "marvinpinto/action-automatic-releases@latest"
+        uses: "marvinpinto/action-automatic-releases@<VERSION>"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
-          prerelease: true
-          title: "Development Build"
+          prerelease: false
           files: |
             src
