@@ -8,11 +8,13 @@ jobs:
     name: Create Release
     runs-on: ubuntu-latest
     steps:
-      - name: Check out automaton-server
+      - name: Checkout local
+        uses: actions/checkout@v4
+      - name: Checkout nested
         uses: actions/checkout@v4
         with:
           repository: chamale-rac/automaton-server
-          path: ${{ github.workspace }}/automaton
+          path: automaton
       - name: Create zip
         run: |
           zip -r UsableCode.zip automaton/src/ src/ grammars/ app.py requirements.txt
