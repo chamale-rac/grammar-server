@@ -13,8 +13,6 @@ jobs:
         with:
           repository: chamale-rac/automaton-server
           path: ${{ github.workspace }}/automaton
-      - name: Checkout code
-        uses: actions/checkout@v2
       - name: Create zip
         run: |
           zip -r UsableCode.zip automaton/src/ src/ grammars/ app.py requirements.txt
