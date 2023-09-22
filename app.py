@@ -33,8 +33,13 @@ def main():
         print("Invalid file path. Using default file.")
         file_path = './grammars/g.txt'
     lines = readFile(file_path)
-    for line in lines:
-        print(f'({check(line)})\t\t{line}')
+    print()
+    if not False in [check(line) for line in lines]:
+        grammar = Grammar(lines)
+        print('>> Solution:')
+        print(grammar)
+    else:
+        print('>> Grammar is invalid.')
 
 
 if __name__ == '__main__':
