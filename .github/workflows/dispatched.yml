@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: chamale-rac/automaton-server
-          path: ${{ github.workspace }}
+          path: ${{ github.workspace }}/automaton
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Create zip
