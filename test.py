@@ -1,20 +1,25 @@
-from itertools import combinations
+# ((( x)+ \|)* x)
+
+# [A-Z] -> (( [A-Z]|[a-z]|[0-9])+|( \ϵ))
+
+# (( [A-Z]|[a-z]|[0-9])+|( \ϵ))
+# (( [A-Z]|[a-z]|[0-9]|(\ϵ))
 
 
-def generate_combinations(tuple_data, dynamic_element):
-    combinations_list = []
-    n = len(tuple_data)
+# x ->(( x)+|((( x)+ \|)* x))
 
-    for comb in combinations(tuple_data, n+1):
-        print(comb)
+# x ->((( [A-Z]|[a-z]|[0-9])+|( \ϵ))|(((( [A-Z]|[a-z]|[0-9])+|( \ϵ)) \|)* (( [A-Z]|[a-z]|[0-9]|(\ϵ))))
 
+AZ = '[A-Z]'
+az = '[a-z]'
+digit = '[0-9]'
+epsilon_C = '\ϵ'
+s = ' '
+or_C = '\|'
+arrow = '->'
 
-tuple_data = ('C', 'A', 'C', 'a')
-dynamic_element = 'C'
-non_dynamic_elements = ['A']
-generate_combinations(tuple_data, dynamic_element)
+any_or_epsilon = f'({s}({AZ}|{az}|{digit}))+|({s}{epsilon_C})'
 
-tuple_data = ('C', 'C')
-dynamic_element = 'C'
-non_dynamic_elements = []
-generate_combinations(tuple_data, dynamic_element)
+left = f'{AZ}{s}{arrow}{s}'
+any_or_epsilon_with_or = f'({any_or_epsilon}{s}{or_C})'
+body = f'({any_or_epsilon}|({any_or_epsilon_with_or}*{s}{any_or_epsilon}))'

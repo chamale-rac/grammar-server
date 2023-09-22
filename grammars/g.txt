@@ -3,3 +3,7 @@ A -> C | a
 B -> C | b
 C -> C D E | ϵ
 D -> A | B | a b
+errors
+A -> C | 
+B -> CA
+B -> ϵ ϵ | A
