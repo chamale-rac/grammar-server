@@ -16,9 +16,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Create release
-        uses: "marvinpinto/action-automatic-releases@<VERSION>"
+        uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
-            src
+            src/grammar.py
+
