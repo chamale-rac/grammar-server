@@ -1,8 +1,9 @@
-name: Tagged Release
 on:
   push:
     tags:
       - "v*"
+
+name: Tagged Release
 
 jobs:
   build:
