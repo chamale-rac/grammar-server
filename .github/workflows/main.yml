@@ -1,7 +1,8 @@
+name: Tagged Release
 on:
-  workflow_dispatch:
-
-name: Create Release
+  push:
+    tags:
+      - "v*"
 
 jobs:
   build:
