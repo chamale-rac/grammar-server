@@ -2,7 +2,7 @@ name: Dispatched Release
 
 on:
   workflow_dispatch:
-  
+
 jobs:
   build:
     name: Create Release
@@ -17,13 +17,13 @@ jobs:
           path: automaton
       - name: Create zip
         run: |
-          zip -r UsableCode.zip automaton/src/ src/ grammars/ app.py requirements.txt
+          zip -r RealSourceCode.zip automaton/src/ src/ grammars/ app.py requirements.txt
       - name: Create release
-        uses: "marvinpinto/action-automatic-releases@latest"
+        uses: 'marvinpinto/action-automatic-releases@latest'
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
+          repo_token: '${{ secrets.GITHUB_TOKEN }}'
+          automatic_release_tag: 'latest'
           prerelease: true
-          title: "Development Build"
+          title: 'Development Build'
           files: |
-            UsableCode.zip
+            RealSourceCode.zip
