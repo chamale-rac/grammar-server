@@ -150,7 +150,10 @@ class Grammar:
         Remove the unary productions from the grammar.
         '''        
         # Filter and get only the unary productions for each production
-        unary_productions = {production: {rule[0] for rule in rules if len(rule) == 1 and rule[0] in self.non_terminals} for production, rules in self.productions.items()}
+        unary_productions = {production: {rule for rule in rules if len(rule) == 1 and rule[0] in self.non_terminals} for production, rules in self.productions.items()}
+        # Get no unary productions the same way.
+        no_unary_productions = {productions: {rule for rule in rules if len(rule) != 1 or rule[0] not in self.non_terminals } for productions, rules in self.productions.items()}
+        
 
         # For dynamic programming store the already get pairs.
         pairs = set()
@@ -176,7 +179,7 @@ class Grammar:
                 return
 
             #  Create new pairs using them as the second element and pair[0] as the first element.
-            new_pairs = [(pair[0], unary_production) for unary_production in unary_productions_second]
+            new_pairs = [(pair[0], unary_production[0]) for unary_production in unary_productions_second]
             
             # Repeat the induction for each new pair.
             for pair in new_pairs:
@@ -188,3 +191,12 @@ class Grammar:
         # Repeat the induction for each pair.
         for pair in base:
             induction(pair)
+
+        self.simplified_productions = defaultdict(set)
+
+        # For each pair, create a new production [pair[0] -> no_unary_productions[pair[1]]]        
+        for pair in pairs:
+            if pair[1] in no_unary_productions:
+                self.simplified_productions[pair[0]] |= no_unary_productions[pair[1]]
+        
+        self.productions = self.simplified_productions
