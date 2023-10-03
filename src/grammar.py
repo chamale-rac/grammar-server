@@ -19,6 +19,7 @@ class Grammar:
         self.productions = defaultdict(set)
         self.__transform_lines(lines)
         self.__remove_e_transitions()
+        self.__remove_unary_productions()
 
     def __str__(self) -> str:
         output = ''
@@ -51,7 +52,6 @@ class Grammar:
         for production in productions:
             # Remove the spaces from the non-terminal.
             this_non_terminal = production[0].strip()
-
             # Split the rules string by the pipe symbol. And then group the symbols in a tuple.
             rule_set = {tuple(rule.strip().split(' '))
                         for rule in production[1].split('|')}
@@ -138,10 +138,53 @@ class Grammar:
                 if BREAK_INF_LOOP:
                     for nullable in self.nullables:
                         self.productions[nullable] -= {('ϵ',)}
-                    print()
                     break
 
                 # Remove the non-terminal from the nullables set.
                 self.nullables.remove(nullable_non_terminal)
                 # Quit ϵ from the production.
                 self.productions[nullable_non_terminal] -= {('ϵ',)}
+
+    def __remove_unary_productions(self):
+        '''
+        Remove the unary productions from the grammar.
+        '''        
+        # Filter and get only the unary productions for each production
+        unary_productions = {production: {rule[0] for rule in rules if len(rule) == 1 and rule[0] in self.non_terminals} for production, rules in self.productions.items()}
+
+        # For dynamic programming store the already get pairs.
+        pairs = set()
+
+        def induction(pair: tuple[str, str]):
+            '''
+            Create the pairs of the unary productions.
+            '''
+            if pair in pairs:
+                return
+            
+            if pair[0] in unary_productions:
+                pairs.add(pair)
+
+            if pair[1] not in unary_productions:
+                return            
+            
+            # Get the unary productions of the second element of the pair.
+            unary_productions_second = unary_productions[pair[1]]
+
+            # Check if there is no unary productions.
+            if not unary_productions_second:
+                return
+
+            #  Create new pairs using them as the second element and pair[0] as the first element.
+            new_pairs = [(pair[0], unary_production) for unary_production in unary_productions_second]
+            
+            # Repeat the induction for each new pair.
+            for pair in new_pairs:
+                induction(pair)
+
+        # Generate the initial pairs, with it selves.
+        base = list(zip(self.non_terminals, self.non_terminals))
+        
+        # Repeat the induction for each pair.
+        for pair in base:
+            induction(pair)
