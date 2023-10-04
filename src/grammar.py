@@ -17,9 +17,11 @@ class Grammar:
         self.production_terminals = defaultdict(set)
         self.production_non_terminals = defaultdict(set)
         self.productions = defaultdict(set)
+        self.initial_symbol: str = None
         self.__transform_lines(lines)
         self.__remove_e_transitions()
         self.__remove_unary_productions()
+        self.__remove_useless_symbols()
 
     def __str__(self) -> str:
         output = ''
@@ -38,6 +40,37 @@ class Grammar:
                 self.productions == other.productions
         return False
 
+    def __clean(self) -> None:
+        '''
+        Clean the grammar references set utils.
+        '''
+
+        self.non_terminals.clear()
+        self.production_non_terminals.clear()
+        self.nullables.clear()
+        self.terminals.clear()
+        self.production_terminals.clear()
+
+    def __map_rules(self, non_terminal: str, rules: set[tuple[str]]) -> None:
+        '''
+        Map the rule set to the terminals and non-terminals sets.
+        '''
+        self.non_terminals.add(non_terminal)
+
+        for rule in rules:
+            # Add each symbol to the terminals or non-terminals set.
+            for symbol in rule:
+                if symbol.isupper():
+                    self.non_terminals.add(symbol)
+                    self.production_non_terminals[non_terminal] |= set(
+                        (symbol,))
+                else:
+                    if symbol == 'ϵ':
+                        self.nullables.add(non_terminal)
+                    self.terminals.add(symbol)
+                    self.production_terminals[non_terminal] |= set(
+                        (symbol,))
+
     def __transform_lines(self, lines) -> list[str]:
         '''
         Transform the received lines into productions. Each line have been already validated.
@@ -45,7 +78,6 @@ class Grammar:
         Args:
             lines (list[str]): The lines of the grammar file.
         '''
-
         # Divide each line by non-terminal -> rule | rule | ...
         productions = [line.split('->') for line in lines]
 
@@ -53,27 +85,15 @@ class Grammar:
             # Remove the spaces from the non-terminal.
             this_non_terminal = production[0].strip()
             # Split the rules string by the pipe symbol. And then group the symbols in a tuple.
-            rule_set = {tuple(rule.strip().split(' '))
-                        for rule in production[1].split('|')}
+            rules = {tuple(rule.strip().split(' '))
+                     for rule in production[1].split('|')}
 
             # Add the non-terminal to the productions dictionary.
-            self.productions[this_non_terminal] |= rule_set
+            self.productions[this_non_terminal] |= rules
 
-            # Add the non-terminal to the non-terminals set.
-            self.non_terminals.add(this_non_terminal)
-            for rule in rule_set:
-                # Add each symbol to the terminals or non-terminals set.
-                for symbol in rule:
-                    if symbol.isupper():
-                        self.non_terminals.add(symbol)
-                        self.production_non_terminals[this_non_terminal] |= set(
-                            symbol)
-                    else:
-                        if symbol == 'ϵ':
-                            self.nullables.add(this_non_terminal)
-                        self.terminals.add(symbol)
-                        self.production_terminals[this_non_terminal] |= set(
-                            symbol)
+            if not self.initial_symbol:
+                self.initial_symbol = this_non_terminal
+            self.__map_rules(this_non_terminal, rules)
 
     def __remove_e_transitions(self):
         '''
@@ -148,12 +168,13 @@ class Grammar:
     def __remove_unary_productions(self):
         '''
         Remove the unary productions from the grammar.
-        '''        
+        '''
         # Filter and get only the unary productions for each production
-        unary_productions = {production: {rule for rule in rules if len(rule) == 1 and rule[0] in self.non_terminals} for production, rules in self.productions.items()}
+        unary_productions = {production: {rule for rule in rules if len(
+            rule) == 1 and rule[0] in self.non_terminals} for production, rules in self.productions.items()}
         # Get no unary productions the same way.
-        no_unary_productions = {productions: {rule for rule in rules if len(rule) != 1 or rule[0] not in self.non_terminals } for productions, rules in self.productions.items()}
-        
+        no_unary_productions = {productions: {rule for rule in rules if len(
+            rule) != 1 or rule[0] not in self.non_terminals} for productions, rules in self.productions.items()}
 
         # For dynamic programming store the already get pairs.
         pairs = set()
@@ -164,13 +185,13 @@ class Grammar:
             '''
             if pair in pairs:
                 return
-            
+
             if pair[0] in unary_productions:
                 pairs.add(pair)
 
             if pair[1] not in unary_productions:
-                return            
-            
+                return
+
             # Get the unary productions of the second element of the pair.
             unary_productions_second = unary_productions[pair[1]]
 
@@ -179,24 +200,74 @@ class Grammar:
                 return
 
             #  Create new pairs using them as the second element and pair[0] as the first element.
-            new_pairs = [(pair[0], unary_production[0]) for unary_production in unary_productions_second]
-            
+            new_pairs = [(pair[0], unary_production[0])
+                         for unary_production in unary_productions_second]
+
             # Repeat the induction for each new pair.
             for pair in new_pairs:
                 induction(pair)
 
         # Generate the initial pairs, with it selves.
         base = list(zip(self.non_terminals, self.non_terminals))
-        
+
         # Repeat the induction for each pair.
         for pair in base:
             induction(pair)
 
         self.simplified_productions = defaultdict(set)
 
-        # For each pair, create a new production [pair[0] -> no_unary_productions[pair[1]]]        
+        # For each pair, create a new production [pair[0] -> no_unary_productions[pair[1]]]
         for pair in pairs:
             if pair[1] in no_unary_productions:
-                self.simplified_productions[pair[0]] |= no_unary_productions[pair[1]]
-        
+                self.simplified_productions[pair[0]
+                                            ] |= no_unary_productions[pair[1]]
+
         self.productions = self.simplified_productions
+
+    def __remove_useless_symbols(self):
+        '''
+        Remove the useless symbols from the grammar.
+        '''
+
+        self.__clean()
+        for non_terminal, rules in self.productions.items():
+            self.__map_rules(non_terminal, rules)
+
+        # 1. Remove symbols that dont produce anything.
+        # TODO this can be optimized by avoid mapping the rules again, and use dynamic programming to store the symbols that produce something.
+        for non_terminal, rules in self.productions.items():
+            for production_non_terminal in self.production_non_terminals[non_terminal]:
+                if production_non_terminal not in self.productions:
+                    # Quit any rule that contains the symbol.
+                    self.productions[non_terminal] -= {
+                        rule for rule in rules if production_non_terminal in rule}
+
+        # TODO can be optimized by avoid mapping the rules again, and use dynamic programming to store the symbols that are reachable.
+        self.__clean()
+        for non_terminal, rules in self.productions.items():
+            self.__map_rules(non_terminal, rules)
+
+        # 2. Remove symbols that are not reachable by the initial symbol.
+        reachable_non_terminals: set[str] = set()
+
+        def induction(non_terminal: str):
+            '''
+            Induction to get the reachable non-terminals.
+            '''
+            if non_terminal in reachable_non_terminals:
+                return
+
+            reachable_non_terminals.add(non_terminal)
+
+            if non_terminal not in self.production_non_terminals:
+                return
+
+            for production_non_terminal in self.production_non_terminals[non_terminal]:
+                induction(production_non_terminal)
+
+        induction(self.initial_symbol)
+        unreachable_non_terminals = self.non_terminals - reachable_non_terminals
+
+        # Remove the unreachable non-terminals from self.productions.
+        for unreachable_non_terminal in unreachable_non_terminals:
+            self.productions.pop(unreachable_non_terminal)
