@@ -18,6 +18,7 @@ class Grammar:
         self.production_non_terminals = defaultdict(set)
         self.productions = defaultdict(set)
         self.initial_symbol: str = None
+        self.prefix: str = None
         self.__transform_lines(lines)
         self.__remove_e_transitions()
         self.__remove_unary_productions()
@@ -55,12 +56,21 @@ class Grammar:
         '''
         Map the rule set to the terminals and non-terminals sets.
         '''
+        def contains_just_upper_and_numeric(symbol: str) -> bool:
+            '''
+            Check if the symbol contains just upper case letters and numbers.
+            '''
+            if len(symbol) == 1:
+                return symbol.isupper()
+
+            return all(character.isupper() or character.isnumeric() for character in symbol)
+
         self.non_terminals.add(non_terminal)
 
         for rule in rules:
             # Add each symbol to the terminals or non-terminals set.
             for symbol in rule:
-                if symbol.isupper():
+                if contains_just_upper_and_numeric(symbol):
                     self.non_terminals.add(symbol)
                     self.production_non_terminals[non_terminal] |= set(
                         (symbol,))
@@ -78,6 +88,19 @@ class Grammar:
         Args:
             lines (list[str]): The lines of the grammar file.
         '''
+        def procedural_prefix(non_terminals: set[str]) -> str:
+            '''
+            Generate a random letters prefix checking it not exist on terminals
+            '''
+            from random import choices
+            from string import ascii_uppercase
+
+            prefix = ''.join(choices(ascii_uppercase, k=3))
+            while prefix in non_terminals:
+                prefix = ''.join(choices(ascii_uppercase, k=3))
+
+            return prefix
+
         # Divide each line by non-terminal -> rule | rule | ...
         productions = [line.split('->') for line in lines]
 
@@ -94,6 +117,9 @@ class Grammar:
             if not self.initial_symbol:
                 self.initial_symbol = this_non_terminal
             self.__map_rules(this_non_terminal, rules)
+
+        # get procedural prefix
+        self.prefix = procedural_prefix(self.non_terminals)
 
     def __remove_e_transitions(self):
         '''
@@ -288,16 +314,16 @@ class Grammar:
 
         # Remove the unreachable non-terminals from self.productions.
         for unreachable_non_terminal in unreachable_non_terminals:
-            if unreachable_non_terminal in self.productions:
-                self.productions.pop(unreachable_non_terminal)
-            # Remove the unreachable non-terminal from the production that contains it.
-            else:
-                remove_non_terminal_from_production(unreachable_non_terminal)
+            self.productions.pop(unreachable_non_terminal)
 
     def __to_chumsky_normal_form(self):
         '''
         Transform the grammar to Chumsky Normal Form.
         '''
+        self.__clean()
+        for non_terminal, rules in self.productions.items():
+            self.__map_rules(non_terminal, rules)
+
         # 1. Replace terminals in the right side of the productions by new non-terminals.
         # Just if the terminal is not alone in the right side of the production.
 
