@@ -63,6 +63,13 @@ def main():
     print(grammar)
     print('-'*50)
 
+    file_path = './grammars/test3.txt'
+    lines = readFile(file_path)
+    grammar = Grammar(lines)
+    print(f'Results {file_path}')
+    print(grammar)
+    print('-'*50)
+
 
 if __name__ == '__main__':
     main()

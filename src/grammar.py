@@ -23,9 +23,11 @@ class Grammar:
         self.__remove_e_transitions()
         self.__remove_unary_productions()
         self.__remove_useless_symbols()
+        self.__to_chumsky_normal_form()
 
     def __str__(self) -> str:
-        output = ''
+        output = f'initial symbol := {self.initial_symbol}\n'
+        output += f'new symbols prefix := {self.prefix}\n'
         for production, rules in self.productions.items():
             rules_str = ''
             for rule in rules:
@@ -88,16 +90,16 @@ class Grammar:
         Args:
             lines (list[str]): The lines of the grammar file.
         '''
-        def procedural_prefix(non_terminals: set[str]) -> str:
+        def procedural_prefix(non_terminals: set[str], k: int = 3) -> str:
             '''
             Generate a random letters prefix checking it not exist on terminals
             '''
             from random import choices
             from string import ascii_uppercase
 
-            prefix = ''.join(choices(ascii_uppercase, k=3))
+            prefix = ''.join(choices(ascii_uppercase, k=k))
             while prefix in non_terminals:
-                prefix = ''.join(choices(ascii_uppercase, k=3))
+                prefix = ''.join(choices(ascii_uppercase, k=k))
 
             return prefix
 
@@ -119,7 +121,7 @@ class Grammar:
             self.__map_rules(this_non_terminal, rules)
 
         # get procedural prefix
-        self.prefix = procedural_prefix(self.non_terminals)
+        self.prefix = procedural_prefix(self.non_terminals, 2)
 
     def __remove_e_transitions(self):
         '''
@@ -326,8 +328,66 @@ class Grammar:
 
         # 1. Replace terminals in the right side of the productions by new non-terminals.
         # Just if the terminal is not alone in the right side of the production.
+        index = 0
+
+        for i, terminal in enumerate(self.terminals):
+            used = False
+            for non_terminal, rules in self.productions.items():
+                # Just for the rule in rules that contains the terminal, but not alone, replace with a prefix + i.
+                this_rules = {
+                    tuple(map(
+                        lambda symbol: self.prefix +
+                        str(i) if symbol == terminal else symbol,
+                        rule
+                    )) for rule in rules if terminal in rule and isinstance(rule, tuple) and len(rule) > 1}
+
+                if this_rules:
+                    used = True
+                    self.productions[non_terminal] -= {
+                        rule for rule in rules if terminal in rule and isinstance(rule, tuple) and len(rule) > 1}
+                    self.productions[non_terminal] |= this_rules
+
+            if used:
+                index += 1
+                self.productions[self.prefix + str(i)] |= {(terminal,)}
 
         # 2. Replace productions with more than 2 non-terminals by new non-terminals.
-        # Just if the production is not already in the Chumsky Normal Form.
+        # Just if the production is not already in the Chumsky Normal Form. (len(rule) > 2)
+
+        # Non in chumsky normal form: nCNF
+        nCNF: set(tuple[str]) = set()  # len(rule) > 2
+
+        for non_terminal, rules in self.productions.items():
+            nCNF |= {
+                rule for rule in rules if len(rule) > 2 and isinstance(rule, tuple)}
+
+        # Start transforming A -> Bk1 Bk2 ... Bkn to A -> Bk1 C1, C1 -> Bk2 C2, ..., Cn-2 -> Bkn-1 Bkn
+
+        nCNF = list(nCNF)
+        nCNF_initial: list[tuple[str]] = nCNF
+
+        nCNF = list(zip(
+            nCNF, [None]*len(nCNF)))
+
+        for i, rule in enumerate(nCNF):
+            transformed_rule = rule[0]
+            while len(transformed_rule) > 2 and isinstance(transformed_rule, tuple):
+                last_two = transformed_rule[-2:]
+                transformed_rule = transformed_rule[:-
+                                                    2] + (self.prefix + str(index),)
+
+                self.productions[f'{self.prefix}{index}'] |= {last_two}
+                index += 1
+
+            nCNF[i] = (rule[0], transformed_rule)
+
+        # Replace the old rule by the new rule in the rules of productions.
+        for non_terminal, rules in self.productions.items():
+            this_rules = {
+                nCNF[nCNF_initial.index(rule)][1] for rule in rules if rule in nCNF_initial}
+            if this_rules:
+                self.productions[non_terminal] -= {
+                    rule for rule in rules if rule in nCNF_initial}
+                self.productions[non_terminal] |= this_rules
 
         pass
