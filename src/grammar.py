@@ -228,21 +228,39 @@ class Grammar:
         '''
         Remove the useless symbols from the grammar.
         '''
+        def remove_non_terminal_from_production(this_non_terminal: str):
+            '''
+            Remove the non-terminal from the production that contains it.
+            '''
+            for non_terminal, rules in self.productions.items():
+                self.productions[non_terminal] -= {
+                    rule for rule in rules if this_non_terminal in rule}
 
         self.__clean()
         for non_terminal, rules in self.productions.items():
             self.__map_rules(non_terminal, rules)
 
         # 1. Remove symbols that dont produce anything.
-        # TODO this can be optimized by avoid mapping the rules again, and use dynamic programming to store the symbols that produce something.
-        for non_terminal, rules in self.productions.items():
-            for production_non_terminal in self.production_non_terminals[non_terminal]:
-                if production_non_terminal not in self.productions:
-                    # Quit any rule that contains the symbol.
-                    self.productions[non_terminal] -= {
-                        rule for rule in rules if production_non_terminal in rule}
+        generative_productions = set()
+        for this_non_terminal in self.non_terminals:
+            # Check if the current non-terminal have any rule.
 
-        # TODO can be optimized by avoid mapping the rules again, and use dynamic programming to store the symbols that are reachable.
+            # Remove the non-terminal from any production that contains it.
+            if this_non_terminal not in self.productions:
+                remove_non_terminal_from_production(this_non_terminal)
+
+            else:
+                composed_just_terminals_productions = {
+                    rule for rule in self.productions[this_non_terminal] if all(symbol in self.terminals for symbol in rule)}
+                if composed_just_terminals_productions:
+                    generative_productions.add(this_non_terminal)
+
+        # Remove the non-terminals that dont produce anything based on the generative productions.
+        for this_non_terminal in self.non_terminals:
+            if this_non_terminal not in generative_productions or this_non_terminal not in self.productions:
+                # Remove the non-terminal from the production that contains it.
+                remove_non_terminal_from_production(this_non_terminal)
+
         self.__clean()
         for non_terminal, rules in self.productions.items():
             self.__map_rules(non_terminal, rules)
@@ -270,4 +288,20 @@ class Grammar:
 
         # Remove the unreachable non-terminals from self.productions.
         for unreachable_non_terminal in unreachable_non_terminals:
-            self.productions.pop(unreachable_non_terminal)
+            if unreachable_non_terminal in self.productions:
+                self.productions.pop(unreachable_non_terminal)
+            # Remove the unreachable non-terminal from the production that contains it.
+            else:
+                remove_non_terminal_from_production(unreachable_non_terminal)
+
+    def __to_chumsky_normal_form(self):
+        '''
+        Transform the grammar to Chumsky Normal Form.
+        '''
+        # 1. Replace terminals in the right side of the productions by new non-terminals.
+        # Just if the terminal is not alone in the right side of the production.
+
+        # 2. Replace productions with more than 2 non-terminals by new non-terminals.
+        # Just if the production is not already in the Chumsky Normal Form.
+
+        pass

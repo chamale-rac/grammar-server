@@ -41,6 +41,13 @@ def main():
     print('-'*50)
     # else:
     #     print('>> Grammar is invalid.')
+    file_path = './grammars/test2.txt'
+    lines = readFile(file_path)
+    # if not False in [check(line) for line in lines]:
+    grammar = Grammar(lines)
+    print(f'Results {file_path}')
+    print(grammar)
+    print('-'*50)
 
     file_path = './grammars/g1.txt'
     lines = readFile(file_path)
