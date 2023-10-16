@@ -283,6 +283,25 @@ class Grammar:
                 if composed_just_terminals_productions:
                     generative_productions.add(this_non_terminal)
 
+        non_in_generative_productions = self.non_terminals - generative_productions
+
+        # Check if it has a non-terminal that is in generative productions. Maybe on many transitions down.
+        checked = set()
+
+        def go_deep(this_non_terminal: str, non_in_generative: str):
+            for non_terminal in self.production_non_terminals[this_non_terminal]:
+                if non_terminal not in checked:
+                    checked.add(non_terminal)
+                    if non_terminal in generative_productions:
+                        generative_productions.add(non_in_generative)
+                    else:
+                        go_deep(non_terminal, non_in_generative)
+
+        for non_terminal in non_in_generative_productions:
+            checked = set()
+            checked.add(non_terminal)
+            go_deep(non_terminal, non_terminal)
+
         # Remove the non-terminals that dont produce anything based on the generative productions.
         for this_non_terminal in self.non_terminals:
             if this_non_terminal not in generative_productions or this_non_terminal not in self.productions:

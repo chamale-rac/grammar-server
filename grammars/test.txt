@@ -1,4 +1,4 @@
-S -> NP NP
+S -> NP VP
 VP -> VP PP
 VP -> V NP
 VP -> cooks | drinks | eats | cuts
