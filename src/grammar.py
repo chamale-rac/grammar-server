@@ -409,4 +409,60 @@ class Grammar:
                     rule for rule in rules if rule in nCNF_initial}
                 self.productions[non_terminal] |= this_rules
 
-        pass
+        self.__clean()
+        for non_terminal, rules in self.productions.items():
+            self.__map_rules(non_terminal, rules)
+
+    def CYK(self, string: str):
+        '''
+        CYK algorithm implementation.
+
+        Reference: https://en.wikipedia.org/wiki/CYK_algorithm
+        '''
+        # Not part of the original algorithm, but and adaptation to the problem.
+        unary_productions = {production: {rule for rule in rules if len(
+            rule) == 1 and rule[0] in self.terminals} for production, rules in self.productions.items()}
+
+        # let the input be a string I consisting of n characters: a1 ... an.
+        # split by spaces
+        I = string.split(' ')
+
+        # let the grammar contain r non terminal symbols R1 ... Rr, with start symbol R1.
+        R = self.productions
+
+        n = len(I)
+        r = len(R)
+
+        # let P[n,n,r] be an array of booleans. Initialize all elements of P to false.
+        P = [[[] for _ in range(n)]
+             for _ in range(n)]
+
+        # let back[n,n,r] be an array of lists of back pointing triples. Initialize all elements of back to the empty list.
+        back = [[[None for _ in range(r)] for _ in range(n)]
+                for _ in range(n)]
+
+        for s in range(n):
+            a_s = I[s]
+            for A, rules in unary_productions.items():
+                for rule in rules:
+                    if a_s == rule[0]:
+                        P[0][s].append(A)
+
+        for l in range(1, n):
+            for s in range(n-l):
+                for p in range(l):
+                    for A, rules in R.items():
+                        for rule in rules:
+                            if len(rule) == 2:
+                                B, C = rule
+                                if B in P[p][s] and C in P[l-p-1][s+p+1]:
+                                    P[l][s].append(A)
+                                    back[l][s].append((p, s, A))
+
+        for p in P:
+            print(p)
+
+        if self.initial_symbol in P[n-1][0]:
+            print('The string is accepted by the grammar.')
+        else:
+            print('The string is not accepted by the grammar.')
