@@ -1,0 +1,13 @@
+S -> NP VB
+S -> NP VP
+S -> NN VP
+S -> NN VB
+NP -> NP RC
+NP -> PN NN
+RC -> NP VB
+VP -> VB NP
+VP -> VB NN
+VP -> VB PN
+NN -> buffalo
+PN -> buffalo
+VB -> buffalo

@@ -1,5 +1,7 @@
 from __future__ import annotations
 from collections import defaultdict
+from graphviz import Digraph
+import copy
 
 
 class Grammar:
@@ -413,7 +415,7 @@ class Grammar:
         for non_terminal, rules in self.productions.items():
             self.__map_rules(non_terminal, rules)
 
-    def CYK(self, string: str):
+    def CYK(self, string: str, index: int):
         '''
         CYK algorithm implementation.
 
@@ -422,6 +424,10 @@ class Grammar:
         # Not part of the original algorithm, but and adaptation to the problem.
         unary_productions = {production: {rule for rule in rules if len(
             rule) == 1 and rule[0] in self.terminals} for production, rules in self.productions.items()}
+
+        sorted_productions = list(self.productions.keys())
+        sorted_productions.remove(self.initial_symbol)
+        sorted_productions.insert(0, self.initial_symbol)
 
         # let the input be a string I consisting of n characters: a1 ... an.
         # split by spaces
@@ -438,31 +444,123 @@ class Grammar:
              for _ in range(n)]
 
         # let back[n,n,r] be an array of lists of back pointing triples. Initialize all elements of back to the empty list.
-        back = [[[None for _ in range(r)] for _ in range(n)]
+        back = [[[] for _ in range(n)]
                 for _ in range(n)]
 
         for s in range(n):
             a_s = I[s]
-            for A, rules in unary_productions.items():
+            for A in sorted_productions:
+                rules = unary_productions[A]
                 for rule in rules:
                     if a_s == rule[0]:
                         P[0][s].append(A)
+                        back[0][s].append((0, 0, s, A))
 
         for l in range(1, n):
             for s in range(n-l):
                 for p in range(l):
-                    for A, rules in R.items():
+                    for A in sorted_productions:
+                        rules = R[A]
                         for rule in rules:
                             if len(rule) == 2:
                                 B, C = rule
                                 if B in P[p][s] and C in P[l-p-1][s+p+1]:
                                     P[l][s].append(A)
-                                    back[l][s].append((p, s, A))
-
-        for p in P:
-            print(p)
+                                    back[l][s].append((l, p, s, A, B, C))
 
         if self.initial_symbol in P[n-1][0]:
-            print('The string is accepted by the grammar.')
+            print(f'w = {string} is in L(G).')
         else:
-            print('The string is not accepted by the grammar.')
+            print(f'w = {string} is not in L(G).')
+            return
+
+        attributes = {
+            'rankdir': 'TB',
+            'label': 'Parse tree',
+            'labelloc': 'b',
+            'fontname': 'Helvetica'
+        }
+        digraphs = []
+
+        def draw_trees(element, digraph):
+            l_A, p, s, A, b_A, c_A = element
+
+            B = back[p][s]
+            C = back[l_A-p-1][s+p+1]
+
+            s_A = s
+
+            counter = 0
+            duplicated_digraph = None
+            for b in B:
+                if b[0] == 0 and b[3] == b_A:
+                    l, p, s, _b = b
+                    digraph.node(f'{str(l)+str(s)+_b}', label=f'{_b}')
+                    digraph.edge(f'{str(l_A)+str(s_A)+A}',
+                                 f'{str(l)+str(s)+_b}')
+                    # with no border
+                    digraph.node(
+                        f'{str(l)+str(s)+I[s]}', label=f'{I[s]}', shape='none')
+                    digraph.edge(f'{str(l)+str(s)+_b}',
+                                 f'{str(l)+str(s)+I[s]}')
+                elif b[0] != 0 and b[3] == b_A:
+                    l, p, s, _b, _b_a, _b_b = b
+                    if counter > 0:
+                        digraphs.append(duplicated_digraph)
+                        duplicated_digraph.node(
+                            f'{str(l)+str(s)+_b}', label=f'{_b}')
+                        duplicated_digraph.edge(
+                            f'{str(l_A)+str(s_A)+A}', f'{str(l)+str(s)+_b}')
+                        draw_trees(b, duplicated_digraph)
+                    else:
+                        duplicated_digraph = copy.deepcopy(digraph)
+                        digraph.node(f'{str(l)+str(s)+_b}', label=f'{_b}')
+                        digraph.edge(f'{str(l_A)+str(s_A)+A}',
+                                     f'{str(l)+str(s)+_b}')
+                        draw_trees(b, digraph)
+                        counter += 1
+
+            counter = 0
+            duplicated_digraph = None
+            for c in C:
+                if c[0] == 0 and c[3] == c_A:
+                    l, p, s, _c = c
+                    digraph.node(f'{str(l)+str(s)+_c}', label=f'{_c}')
+                    digraph.edge(f'{str(l_A)+str(s_A)+A}',
+                                 f'{str(l)+str(s)+_c}')
+                    digraph.node(
+                        f'{str(l)+str(s)+I[s]}', label=f'{I[s]}', shape='none')
+                    digraph.edge(f'{str(l)+str(s)+_c}',
+                                 f'{str(l)+str(s)+I[s]}')
+                elif c[0] != 0 and c[3] == c_A:
+                    l, p, s, _c, _c_a, _c_b = c
+                    if counter > 0:
+                        # Create a new digraph based on the previous one, including all the nodes and edges.
+
+                        digraphs.append(duplicated_digraph)
+                        duplicated_digraph.node(
+                            f'{str(l)+str(s)+_c}', label=f'{_c}')
+                        duplicated_digraph.edge(
+                            f'{str(l_A)+str(s_A)+A}', f'{str(l)+str(s)+_c}')
+                        draw_trees(c, duplicated_digraph)
+                    else:
+                        duplicated_digraph = copy.deepcopy(digraph)
+                        digraph.node(
+                            f'{str(l)+str(s)+_c}', label=f'{_c}')
+                        digraph.edge(
+                            f'{str(l_A)+str(s_A)+A}', f'{str(l)+str(s)+_c}')
+                        draw_trees(c, digraph)
+                        counter += 1
+
+        for top in back[n-1][0]:
+            l, p, s, A, b_A, c_A = top
+            if A == self.initial_symbol:
+                digraph = Digraph(graph_attr=attributes)
+                digraphs.append(digraph)
+                digraph.node(f'{str(l)+str(s)+A}', label=f'{A}')
+                draw_trees(top, digraph)
+
+        save_on = f'./parse_tree_{index}_'
+        for i, digraph in enumerate(digraphs):
+            digraph.render(f'{save_on}{i}',
+                           format='png', cleanup=True)
