@@ -1,0 +1,12 @@
+E -> id | L Z | T X | F Y
+X -> P W | P T
+T -> id | L Z | F Y
+Y -> M F | M V
+F -> L Z | id
+Z -> E R
+W -> T X
+V -> F Y
+L -> (
+R -> )
+P -> +
+M -> *

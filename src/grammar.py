@@ -394,11 +394,13 @@ class Grammar:
             transformed_rule = rule[0]
             while len(transformed_rule) > 2 and isinstance(transformed_rule, tuple):
                 last_two = transformed_rule[-2:]
+
+                index += 1
+
                 transformed_rule = transformed_rule[:-
                                                     2] + (self.prefix + str(index),)
 
                 self.productions[f'{self.prefix}{index}'] |= {last_two}
-                index += 1
 
             nCNF[i] = (rule[0], transformed_rule)
 
@@ -553,8 +555,18 @@ class Grammar:
                         counter += 1
 
         for top in back[n-1][0]:
-            l, p, s, A, b_A, c_A = top
-            if A == self.initial_symbol:
+            if top[0] == 0 and top[3] == self.initial_symbol:
+                l, p, s, A = top
+                digraph = Digraph(graph_attr=attributes)
+                digraphs.append(digraph)
+                digraph.node(f'{str(l)+str(s)+A}', label=f'{A}')
+                digraph.node(
+                    f'{str(l)+str(s)+I[s]}', label=f'{I[s]}', shape='none')
+                digraph.edge(f'{str(l)+str(s)+A}',
+                             f'{str(l)+str(s)+I[s]}')
+
+            elif top[0] != 0 and top[3] == self.initial_symbol:
+                l, p, s, A, b_A, c_A = top
                 digraph = Digraph(graph_attr=attributes)
                 digraphs.append(digraph)
                 digraph.node(f'{str(l)+str(s)+A}', label=f'{A}')

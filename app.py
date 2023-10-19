@@ -5,34 +5,24 @@ from src.utils.tools import readFile
 
 
 def main():
-    file_path = './grammars/test4.txt'
-    file_path = './grammars/test.txt'
-    lines = readFile(file_path)
-    grammar = Grammar(lines)
-    print(f'Results {file_path}')
-    print(grammar)
-    print('-'*50)
-    grammar.CYK('i saw him with the binoculars', 1)
-    grammar.CYK('the cat drinks the beer', 2)
-    grammar.CYK('she eats a cake with a fork', 3)
+    to_read = [
+        ('./grammars/test.txt', ['i saw him with the binoculars',
+         'the cat drinks the beer', 'she eats a cake with a fork']),
+        ('./grammars/test4.txt', ['i saw him with the binoculars']),
+        ('./grammars/test_hard.txt',
+         ['buffalo buffalo buffalo buffalo buffalo buffalo buffalo buffalo'])
+    ]
 
-    file_path = './grammars/test4.txt'
-    lines = readFile(file_path)
-    grammar = Grammar(lines)
-    print(f'Results {file_path}')
-    print(grammar)
-    print('-'*50)
-    grammar.CYK('i saw him with the binoculars', 4)
+    to_read = [
+        ('./grammars/1.txt', ['id + id', '( id * id ) + id', 'id']),
+    ]
 
-    file_path = './grammars/test_hard.txt'
-    lines = readFile(file_path)
-    grammar = Grammar(lines)
-    print(f'Results {file_path}')
-    print(grammar)
-    print('-'*50)
-    grammar.CYK(
-        'buffalo buffalo buffalo buffalo buffalo buffalo buffalo buffalo', 5)
+    for file_path, sentences in to_read:
+        lines = readFile(file_path)
+        grammar = Grammar(lines)
+        print(f'Results {file_path}\n{grammar}\n{"-"*50}')
+        for i, sentence in enumerate(sentences):
+            grammar.CYK(sentence, i+1)
 
 
-if __name__ == '__main__':
-    main()
+main()
