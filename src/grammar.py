@@ -2,6 +2,7 @@ from __future__ import annotations
 from collections import defaultdict
 from graphviz import Digraph
 import copy
+import time
 
 
 class Grammar:
@@ -449,6 +450,8 @@ class Grammar:
         back = [[[] for _ in range(n)]
                 for _ in range(n)]
 
+        start_time = time.perf_counter()
+
         for s in range(n):
             a_s = I[s]
             for A in sorted_productions:
@@ -470,10 +473,13 @@ class Grammar:
                                     P[l][s].append(A)
                                     back[l][s].append((l, p, s, A, B, C))
 
+        end_time = time.perf_counter()
+        took = end_time - start_time
+
         if self.initial_symbol in P[n-1][0]:
-            print(f'w = {string} is in L(G).')
+            print(f'w = {string} is in L(G). (took {took} seconds)')
         else:
-            print(f'w = {string} is not in L(G).')
+            print(f'w = {string} is not in L(G). (took {took} seconds)')
             return
 
         attributes = {
