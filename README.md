@@ -1,6 +1,6 @@
 # 🚀 grammar-server AKA Proyecto 2
 
-Implementation of grammar simplification (to CNF) and CYK algorithm. Documentation at project [Wiki](https://github.com/chamale-rac/grammar-server/wiki).
+Implementation of grammar simplification (to CNF) and CYK algorithm. Project documentation at [Wiki](https://github.com/chamale-rac/grammar-server/wiki).
 
 ## 📑 Index
 
