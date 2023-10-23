@@ -1,3 +1,0 @@
-[submodule "automaton"]
-	path = automaton
-	url = git@github.com:chamale-rac/automaton-server.git

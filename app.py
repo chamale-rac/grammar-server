@@ -1,45 +1,39 @@
 from src.grammar import Grammar
-from src.utils.tools import readFile, fileInPath
-from src.utils.constants import regex_str
-
-from automaton.src.expression import Expression
-from automaton.src._ast import AbstractSyntaxTree as AST
-from automaton.src._nfa import NonDeterministicFiniteAutomaton as NFA
-# !COPY THIS: ϵ
+from src.utils.tools import readFile
+import os
 
 
 def main():
-    regex = Expression(regex_str)
-    regex.shuntingYard()
-
-    ast = AST(regex)
-    ast.build()
-
-    nfa = NFA(ast.builded, regex.alphabet)
-    nfa.thompson()
-
-    def check(string: str) -> bool:
-        # Replace each '|' with '\|' and 'ϵ' with '\ϵ'
-        string = string.replace('|', '\|')
-        string = string.replace('ϵ', '\ϵ')
-        expression = Expression(string)
-        expression.format()
-        expression.format_string()
-
-        return nfa.simulate(expression.formatted)
-
-    file_path = input("Enter file path (default: ./grammars/g.txt): ")
-    if not file_path or not fileInPath(file_path):
-        print("Invalid file path. Using default file.")
-        file_path = './grammars/g.txt'
+    file_path = input("Enter file path: ")
+    if not os.path.isfile(file_path) or os.path.splitext(file_path)[1] != '.txt':
+        print("Invalid file path or not a .txt file")
+        return
     lines = readFile(file_path)
-    print()
-    if not False in [check(line) for line in lines]:
-        grammar = Grammar(lines)
-        print('>> Solution:')
-        print(grammar)
-    else:
-        print('>> Grammar is invalid.')
+    grammar = Grammar(lines)
+    index = 0
+    print('Original read grammar:')
+    print(grammar)
+    print('-' * 50)
+    grammar.CNF()
+    while True:
+        print("1. CNF")
+        print("2. Phrase (CYK)")
+        print("3. Exit")
+        option = int(input(">> Enter choice (1-3): "))
+        if option == 1:
+            print('-' * 50)
+            print(grammar)
+            print('-' * 50)
+        elif option == 2:
+            sentence = input(">> Enter sentence: ")
+            print('-' * 50)
+            grammar.CYK(sentence, index=index, folder='./imgs/')
+            print('-' * 50)
+            index += 1
+        elif option == 3:
+            break
+        else:
+            print("Invalid option")
 
 
 if __name__ == '__main__':
