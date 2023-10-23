@@ -13,16 +13,21 @@ class Grammar:
         lines (list[str]): The lines of the grammar file.    
     '''
 
-    def __init__(self, lines: list[str]) -> None:
+    def __init__(self, lines: list[str], initial_symbol: str = None, prefix: str = None) -> None:
         self.non_terminals: set[str] = set()
         self.nullables: set[str] = set()
         self.terminals: set[str] = set()
         self.production_terminals = defaultdict(set)
         self.production_non_terminals = defaultdict(set)
         self.productions = defaultdict(set)
-        self.initial_symbol: str = None
-        self.prefix: str = None
+        self.initial_symbol: str = initial_symbol
+        self.prefix: str = prefix
         self.__transform_lines(lines)
+
+    def CNF(self) -> None:
+        '''
+        Transform the grammar to Chumsky Normal Form.
+        '''
         self.__remove_e_transitions()
         self.__remove_unary_productions()
         self.__remove_useless_symbols()
@@ -124,7 +129,8 @@ class Grammar:
             self.__map_rules(this_non_terminal, rules)
 
         # get procedural prefix
-        self.prefix = procedural_prefix(self.non_terminals, 2)
+        if not self.prefix:
+            self.prefix = procedural_prefix(self.non_terminals, 2)
 
     def __remove_e_transitions(self):
         '''
@@ -418,7 +424,7 @@ class Grammar:
         for non_terminal, rules in self.productions.items():
             self.__map_rules(non_terminal, rules)
 
-    def CYK(self, string: str, index: int):
+    def CYK(self, string: str, index: int = 0, folder: str = './', web=False):
         '''
         CYK algorithm implementation.
 
@@ -475,16 +481,22 @@ class Grammar:
 
         end_time = time.perf_counter()
         took = end_time - start_time
-
-        if self.initial_symbol in P[n-1][0]:
-            print(f'w = {string} is in L(G). (took {took} seconds)')
+        is_in = None
+        if not web:
+            if self.initial_symbol in P[n-1][0]:
+                print(f'w = {string} is in L(G). (took {took} seconds)')
+            else:
+                print(f'w = {string} is NOT in L(G). (took {took} seconds)')
+                return
         else:
-            print(f'w = {string} is not in L(G). (took {took} seconds)')
-            return
+            if self.initial_symbol in P[n-1][0]:
+                is_in = True
+            else:
+                is_in = False
+                return is_in, [], took
 
         attributes = {
             'rankdir': 'TB',
-            'label': 'Parse tree',
             'labelloc': 'b',
             'fontname': 'Helvetica'
         }
@@ -578,7 +590,15 @@ class Grammar:
                 digraph.node(f'{str(l)+str(s)+A}', label=f'{A}')
                 draw_trees(top, digraph)
 
-        save_on = f'./parse_tree_{index}_'
-        for i, digraph in enumerate(digraphs):
-            digraph.render(f'{save_on}{i}',
-                           format='png', cleanup=True)
+        if not web:
+            save_on = f'{folder}parse_tree_{index}_'
+            for i, digraph in enumerate(digraphs):
+                digraph.render(f'{save_on}{i}',
+                               format='png', cleanup=True)
+                print(f'Parse tree {i} saved on {save_on}{i}.png')
+        else:
+            images = []
+            for digraph in digraphs:
+                images.append(digraph.pipe(format='svg'))
+
+            return is_in, images, took

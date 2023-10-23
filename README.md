@@ -1,32 +1,37 @@
-# 🚀 grammar-server AKA unknown
+# 🚀 grammar-server AKA Proyecto 2
+
+Implementation of grammar simplification (to CNF) and CYK algorithm. Documentation at project [Wiki](https://github.com/chamale-rac/grammar-server/wiki).
 
 ## 📑 Index
 
-- [🌐 How to use it?](#how-to-use-it)
+- [💻 Standalone terminal program version.](#standalone-terminal-program-version)
+- [🌐 How to run the server?](#how-to-run-the-server)
 - [🤔 Why I code this?](#why-i-code-this)
 - [🧐 Who I am?](#who-i-am)
-- **Exercise 1:** [PDF file](./docs/L7EX1.pdf)
-- **Program show-off**: [Youtube video](-)
 
-### How to use it?
+## Standalone terminal program version
 
-Steps to setup the repository on a local machine.
+⚠️ This version is intended to work on the terminal,  perfect for easy checking the accomplishment of project requirements.
 
-1. After cloning the repo, cause this project use [automaton-server](https://github.com/chamale-rac/automaton-server) (previous project) as submodule, then you need to:
+Use the next command to run it:
 
-    ```bash
-    git submodule update --init --recursive
-    ```
+```bash
+python app.py
+```
 
-2. Thats all! You are done 🎉, run it using:
+## How to run the server?
 
-    ```bash
-    python app.py
-    ```
+This server works directly with the web application, go to the referenced repository for more information [grammar (repository)](https://github.com/chamale-rac/grammar).
+
+Use the next command to run the server on your local machine:
+
+```bash
+python server.py
+```
 
 ## Why I code this?
 
-Es el parte de los laboratorios de **Teoría de la Computación** **Sección 20** del **Segundo ciclo 2023**. Valía puntos, fuí coaccionado 😭.
+Es el **Proyecto No. 2** de **Teoría de la Computación** **Sección 20** del **Segundo ciclo 2023**. Valía puntos, fuí coaccionado 😭.
 
 ## Who I am?
 
