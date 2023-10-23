@@ -28,7 +28,3 @@ def work_simulation():
 @app.route("/healthz", methods=['GET'])
 def salute():
     return 'Hello from iGrammar server!', 200
-
-
-if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0')
