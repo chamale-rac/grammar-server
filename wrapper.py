@@ -28,8 +28,8 @@ def wrapper_cyk(lines: list[str], sentence: str, HEIGHT_REGEX, WIDTH_REGEX, pref
             }
             new_images.append(data)
         return {
-            'prefix': prefix,
-            'initialSymbol': initial_symbol,
+            'prefix': grammar.prefix,
+            'initialSymbol': grammar.initial_symbol,
             'initialGrammar': initial_grammar,
             'resultantGrammar': resultant_grammar,
             'images': new_images,
@@ -39,8 +39,8 @@ def wrapper_cyk(lines: list[str], sentence: str, HEIGHT_REGEX, WIDTH_REGEX, pref
         }
     else:
         return {
-            'prefix': prefix,
-            'initialSymbol': initial_symbol,
+            'prefix': grammar.prefix,
+            'initialSymbol': grammar.initial_symbol,
             'initialGrammar': initial_grammar,
             'resultantGrammar': resultant_grammar,
             'images': [],
