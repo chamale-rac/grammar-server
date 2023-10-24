@@ -19,6 +19,8 @@ Use the next command to run it:
 python app.py
 ```
 
+🧠 Example grammars at [./docs](./docs)
+
 ## How to run the server?
 
 This server works directly with the web application, go to the referenced repository for more information [grammar (repository)](https://github.com/chamale-rac/grammar).
